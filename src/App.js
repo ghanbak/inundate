@@ -12,7 +12,7 @@ class App extends Component {
   }
 
   fetchData = async () => {
-    const raw = await fetch(`https://newsapi.org/v2/everything?domains=wsj.com,nytimes.com,cnn.com,foxnews.com&language=en&sortBy=relevancy&apiKey=${process.env.REACT_APP_INUNDATEUS_NEWS_API_KEY}`);
+    const raw = await fetch(`https://newsapi.org/v2/everything?domains=wsj.com,nytimes.com,cnn.com,foxnews.com&language=en&sortBy=relevancy&pageSize=100&apiKey=${process.env.REACT_APP_INUNDATEUS_NEWS_API_KEY}`);
     const jsonData = await raw.json();
     this.setState({ articles: jsonData.articles });
 
