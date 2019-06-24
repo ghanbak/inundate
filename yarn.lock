@@ -7931,6 +7931,11 @@ react-scripts@3.0.1:
   optionalDependencies:
     fsevents "2.0.6"
 
+react-ticker@^1.1.2:
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/react-ticker/-/react-ticker-1.1.2.tgz#879354f65a34a5e3f5e5880c97b7cf5de6dda8e7"
+  integrity sha512-QMC7G5LpVhM9/t/mspbK9rkWUj3s2kmRHFrZk2ZVoJT4zhI4APXf36EUhpZsbp7+t4FmAhWzuqOEqomOzOC46w==
+
 react@^16.8.6:
   version "16.8.6"
   resolved "https://registry.yarnpkg.com/react/-/react-16.8.6.tgz#ad6c3a9614fd3a4e9ef51117f54d888da01f2bbe"
