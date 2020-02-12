@@ -7931,10 +7931,10 @@ react-scripts@3.0.1:
   optionalDependencies:
     fsevents "2.0.6"
 
-react-ticker@^1.1.2:
-  version "1.1.2"
-  resolved "https://registry.yarnpkg.com/react-ticker/-/react-ticker-1.1.2.tgz#879354f65a34a5e3f5e5880c97b7cf5de6dda8e7"
-  integrity sha512-QMC7G5LpVhM9/t/mspbK9rkWUj3s2kmRHFrZk2ZVoJT4zhI4APXf36EUhpZsbp7+t4FmAhWzuqOEqomOzOC46w==
+react-ticker@^1.2.2:
+  version "1.2.2"
+  resolved "https://registry.yarnpkg.com/react-ticker/-/react-ticker-1.2.2.tgz#12cda5ff8266c6fe90ffcd8c58e12ba1596ddf24"
+  integrity sha512-PXUujoPJvajxwOfosuuujlrBUrjgGp4FB4haWFOI25ujhMppW4SuLkiOdQ9AylrWN3yTHWdk2kbQWe3n9SjFGA==
 
 react@^16.8.6:
   version "16.8.6"
