@@ -1,1 +1,142 @@
+.hud {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #0a0a0a;
+}
 
+/* Branding bar */
+.hud-bar {
+  height: 40px;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  background: #111;
+  border-bottom: 1px solid #222;
+}
+
+.hud-bar-title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  color: #e0e0e0;
+  text-transform: uppercase;
+}
+
+.hud-bar-clock {
+  font-size: 13px;
+  color: #888;
+  letter-spacing: 1px;
+}
+
+/* Source rows grid */
+.hud-rows {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.hud-row {
+  flex: 1;
+  display: flex;
+  border-bottom: 1px solid #222;
+  border-left: 3px solid var(--accent-color);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--accent-color) 8%, #111) 0%,
+    #0a0a0a 40%
+  );
+  overflow: hidden;
+}
+
+.hud-row:last-child {
+  border-bottom: none;
+}
+
+/* Sidebar with favicon */
+.hud-sidebar {
+  width: 64px;
+  min-width: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.3);
+  border-right: 1px solid #222;
+}
+
+.hud-favicon {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+}
+
+.hud-favicon-fallback {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--accent-color);
+}
+
+.hud-source-label {
+  font-size: 9px;
+  color: #888;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* Ticker area */
+.hud-ticker {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  padding: 0 12px;
+}
+
+.hud-ticker-content {
+  white-space: nowrap;
+  display: inline-block;
+  margin: 0;
+}
+
+.hud-ticker-link {
+  font-weight: 600;
+  color: var(--accent-color);
+  text-decoration: none;
+  font-size: 13px;
+  filter: brightness(1.4);
+}
+
+.hud-ticker-link:hover {
+  text-decoration: underline;
+}
+
+.hud-ticker-separator {
+  padding: 0 24px;
+  color: #333;
+}
+
+.hud-ticker-empty {
+  color: #444;
+  font-size: 12px;
+  font-style: italic;
+}
+
+/* Error banner within HUD layout */
+.hud-error {
+  color: #ff4444;
+  font-size: 11px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+}

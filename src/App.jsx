@@ -1,115 +1,147 @@
 import { useCallback, useEffect, useState } from "react";
 import Ticker from "react-ticker";
+import SOURCES from "./sources";
 
 import "./App.css";
 
 const App = () => {
-  const [sources, setSources] = useState({});
+  const [articles, setArticles] = useState({});
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [clock, setClock] = useState(() => formatTime(new Date()));
+  const [hoveredSource, setHoveredSource] = useState(null);
+  const [failedFavicons, setFailedFavicons] = useState({});
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (signal) => {
     try {
-      const response = await fetch("/api/news");
+      const response = await fetch("/api/news", { signal });
       const data = await response.json();
 
       if (data.status === "ok") {
         const grouped = data.articles.reduce((acc, article) => {
-          const name = article.source.name;
-          if (!acc[name]) acc[name] = [];
-          acc[name].push(article);
+          const id = article.source.id;
+          if (!acc[id]) acc[id] = [];
+          acc[id].push(article);
           return acc;
         }, {});
-        setSources(grouped);
+        setArticles(grouped);
+        setError(null);
       } else {
         setError(data.message);
       }
     } catch (err) {
-      setError("Failed to fetch news. Please try again later.");
-      console.error(err);
+      if (err.name !== "AbortError") {
+        setError("Failed to fetch news. Please try again later.");
+        console.error(err);
+      }
+    } finally {
+      setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchData();
+    const controller = new AbortController();
+    fetchData(controller.signal);
+    const interval = setInterval(() => fetchData(controller.signal), 5 * 60 * 1000);
+    return () => {
+      controller.abort();
+      clearInterval(interval);
+    };
   }, [fetchData]);
 
-  const randomInteger = (min, max) => {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-  };
+  useEffect(() => {
+    const timer = setInterval(() => setClock(formatTime(new Date())), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   return (
-    <div
-      style={{
-        padding: "20px",
-        minHeight: "100vh",
-        background: "#000",
-        color: "#fff",
-      }}
-    >
-      <h1>Inundate.us</h1>
-      {error && (
-        <div
-          style={{
-            color: "#ff4444",
-            border: "1px solid",
-            padding: "10px",
-            margin: "20px 0",
-          }}
-        >
-          <strong>Error:</strong> {error}
-        </div>
-      )}
+    <div className="hud">
+      <div className="hud-bar">
+        <span className="hud-bar-title">Inundate</span>
+        <span className="hud-bar-clock">{clock}</span>
+      </div>
+      <div className="hud-rows">
+        {SOURCES.map((source, index) => {
+          const sourceArticles = articles[source.id] || [];
+          const isHovered = hoveredSource === source.id;
 
-      {Object.entries(sources).length === 0 && !error ? (
-        <p>Loading news...</p>
-      ) : (
-        Object.entries(sources).map(([sourceName, articles]) => (
-          <div key={sourceName} style={{ marginBottom: "30px" }}>
-            <h2
-              style={{ borderBottom: "1px solid #333", paddingBottom: "5px" }}
+          return (
+            <div
+              key={source.id}
+              className="hud-row"
+              style={{ "--accent-color": source.color }}
+              onMouseEnter={() => setHoveredSource(source.id)}
+              onMouseLeave={() => setHoveredSource(null)}
             >
-              {sourceName}
-            </h2>
-            <Ticker
-              offset={randomInteger(0, 1024)}
-              mode="chain"
-              speed={randomInteger(25, 40)}
-            >
-              {() => (
-                <p
-                  style={{
-                    whiteSpace: "nowrap",
-                    display: "inline-block",
-                    margin: 0,
-                  }}
-                >
-                  {articles.map((article) => (
-                    <span key={article.url} style={{ paddingRight: "40px" }}>
-                      <a
-                        href={article.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          fontWeight: "bold",
-                          color: "#007bff",
-                          textDecoration: "none",
-                        }}
-                      >
-                        {article.title}:
-                      </a>{" "}
-                      <span style={{ color: "#ccc" }}>
-                        {article.description}
-                      </span>
-                    </span>
-                  ))}
-                </p>
-              )}
-            </Ticker>
-          </div>
-        ))
-      )}
+              <div className="hud-sidebar">
+                {failedFavicons[source.id] ? (
+                  <div className="hud-favicon-fallback" style={{ background: source.color }}>
+                    {source.name[0]}
+                  </div>
+                ) : (
+                  <img
+                    className="hud-favicon"
+                    src={source.favicon}
+                    alt={source.name}
+                    onError={() =>
+                      setFailedFavicons((prev) => ({ ...prev, [source.id]: true }))
+                    }
+                  />
+                )}
+                <span className="hud-source-label">{source.name}</span>
+              </div>
+              <div className="hud-ticker">
+                {loading ? (
+                  <span className="hud-ticker-empty">Loading...</span>
+                ) : error && sourceArticles.length === 0 ? (
+                  <span className="hud-error">{error}</span>
+                ) : sourceArticles.length === 0 ? (
+                  <span className="hud-ticker-empty">No headlines available</span>
+                ) : (
+                  <Ticker
+                    offset={index * 150}
+                    mode="chain"
+                    speed={30}
+                    move={!isHovered}
+                  >
+                    {() => (
+                      <p className="hud-ticker-content">
+                        {sourceArticles.map((article, i) => (
+                          <span key={article.url}>
+                            <a
+                              href={article.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="hud-ticker-link"
+                            >
+                              {article.title}
+                            </a>
+                            {i < sourceArticles.length - 1 && (
+                              <span className="hud-ticker-separator">|</span>
+                            )}
+                          </span>
+                        ))}
+                        <span className="hud-ticker-separator">|</span>
+                      </p>
+                    )}
+                  </Ticker>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };
+
+function formatTime(date) {
+  return date.toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+}
 
 export default App;
