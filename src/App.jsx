@@ -120,11 +120,7 @@ function TickerScroll({ articles }) {
   const [paused, setPaused] = useState(false);
 
   return (
-    <div
-      className="ticker-scroll"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-    >
+    <div className="ticker-scroll">
       <div
         ref={scrollRef}
         className={`ticker-scroll-inner ${paused ? "paused" : ""}`}
@@ -136,6 +132,8 @@ function TickerScroll({ articles }) {
               target="_blank"
               rel="noopener noreferrer"
               className="hud-ticker-link"
+              onMouseEnter={() => setPaused(true)}
+              onMouseLeave={() => setPaused(false)}
             >
               {article.title}
             </a>
@@ -144,7 +142,7 @@ function TickerScroll({ articles }) {
         ))}
         {articles.map((article) => (
           <span
-            key={article.url + "-dup"}
+            key={`${article.url}-duplicate`}
             className="ticker-scroll-item"
             aria-hidden="true"
           >
@@ -154,6 +152,8 @@ function TickerScroll({ articles }) {
               rel="noopener noreferrer"
               className="hud-ticker-link"
               tabIndex={-1}
+              onMouseEnter={() => setPaused(true)}
+              onMouseLeave={() => setPaused(false)}
             >
               {article.title}
             </a>
