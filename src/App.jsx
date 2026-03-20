@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
-import Ticker from "react-ticker";
+import { useCallback, useEffect, useRef, useState } from "react";
 import SOURCES from "./sources";
 
 import "./App.css";
@@ -9,7 +8,6 @@ const App = () => {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [clock, setClock] = useState(() => formatTime(new Date()));
-  const [hoveredSource, setHoveredSource] = useState(null);
   const [failedFavicons, setFailedFavicons] = useState({});
 
   const fetchData = useCallback(async (signal) => {
@@ -42,7 +40,10 @@ const App = () => {
   useEffect(() => {
     const controller = new AbortController();
     fetchData(controller.signal);
-    const interval = setInterval(() => fetchData(controller.signal), 5 * 60 * 1000);
+    const interval = setInterval(
+      () => fetchData(controller.signal),
+      5 * 60 * 1000,
+    );
     return () => {
       controller.abort();
       clearInterval(interval);
@@ -61,21 +62,21 @@ const App = () => {
         <span className="hud-bar-clock">{clock}</span>
       </div>
       <div className="hud-rows">
-        {SOURCES.map((source, index) => {
+        {SOURCES.map((source) => {
           const sourceArticles = articles[source.id] || [];
-          const isHovered = hoveredSource === source.id;
 
           return (
             <div
               key={source.id}
               className="hud-row"
               style={{ "--accent-color": source.color }}
-              onMouseEnter={() => setHoveredSource(source.id)}
-              onMouseLeave={() => setHoveredSource(null)}
             >
               <div className="hud-sidebar">
                 {failedFavicons[source.id] ? (
-                  <div className="hud-favicon-fallback" style={{ background: source.color }}>
+                  <div
+                    className="hud-favicon-fallback"
+                    style={{ background: source.color }}
+                  >
                     {source.name[0]}
                   </div>
                 ) : (
@@ -84,7 +85,10 @@ const App = () => {
                     src={source.favicon}
                     alt={source.name}
                     onError={() =>
-                      setFailedFavicons((prev) => ({ ...prev, [source.id]: true }))
+                      setFailedFavicons((prev) => ({
+                        ...prev,
+                        [source.id]: true,
+                      }))
                     }
                   />
                 )}
@@ -96,35 +100,11 @@ const App = () => {
                 ) : error && sourceArticles.length === 0 ? (
                   <span className="hud-error">{error}</span>
                 ) : sourceArticles.length === 0 ? (
-                  <span className="hud-ticker-empty">No headlines available</span>
+                  <span className="hud-ticker-empty">
+                    No headlines available
+                  </span>
                 ) : (
-                  <Ticker
-                    offset={index * 150}
-                    mode="chain"
-                    speed={30}
-                    move={!isHovered}
-                  >
-                    {() => (
-                      <p className="hud-ticker-content">
-                        {sourceArticles.map((article, i) => (
-                          <span key={article.url}>
-                            <a
-                              href={article.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="hud-ticker-link"
-                            >
-                              {article.title}
-                            </a>
-                            {i < sourceArticles.length - 1 && (
-                              <span className="hud-ticker-separator">|</span>
-                            )}
-                          </span>
-                        ))}
-                        <span className="hud-ticker-separator">|</span>
-                      </p>
-                    )}
-                  </Ticker>
+                  <TickerScroll articles={sourceArticles} />
                 )}
               </div>
             </div>
@@ -134,6 +114,56 @@ const App = () => {
     </div>
   );
 };
+
+function TickerScroll({ articles }) {
+  const scrollRef = useRef(null);
+  const [paused, setPaused] = useState(false);
+
+  return (
+    <div
+      className="ticker-scroll"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      <div
+        ref={scrollRef}
+        className={`ticker-scroll-inner ${paused ? "paused" : ""}`}
+      >
+        {articles.map((article) => (
+          <span key={article.url} className="ticker-scroll-item">
+            <a
+              href={article.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hud-ticker-link"
+            >
+              {article.title}
+            </a>
+            <span className="hud-ticker-separator">|</span>
+          </span>
+        ))}
+        {articles.map((article) => (
+          <span
+            key={article.url + "-dup"}
+            className="ticker-scroll-item"
+            aria-hidden="true"
+          >
+            <a
+              href={article.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hud-ticker-link"
+              tabIndex={-1}
+            >
+              {article.title}
+            </a>
+            <span className="hud-ticker-separator">|</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function formatTime(date) {
   return date.toLocaleTimeString("en-GB", {

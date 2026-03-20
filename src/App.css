@@ -103,10 +103,33 @@
   padding: 0 12px;
 }
 
-.hud-ticker-content {
+/* CSS-based scrolling ticker */
+.ticker-scroll {
+  overflow: hidden;
+  width: 100%;
+}
+
+.ticker-scroll-inner {
+  display: inline-flex;
   white-space: nowrap;
-  display: inline-block;
-  margin: 0;
+  animation: ticker-scroll 60s linear infinite;
+}
+
+.ticker-scroll-inner.paused {
+  animation-play-state: paused;
+}
+
+.ticker-scroll-item {
+  flex-shrink: 0;
+}
+
+@keyframes ticker-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
 .hud-ticker-link {
