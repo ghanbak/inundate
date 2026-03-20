@@ -7,83 +7,10 @@ const App = () => {
   const [sources, setSources] = useState({});
   const [error, setError] = useState(null);
 
-  const apiKey = import.meta.env.VITE_INUNDATEUS_NEWS_API_KEY;
-
   const fetchData = useCallback(async () => {
-    // #region agent log
-    fetch("http://127.0.0.1:7242/ingest/2f452cb7-fe9e-4766-b4a3-1cbf4750e844", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        location: "App.jsx:11",
-        message: "fetchData entry",
-        data: {},
-        timestamp: Date.now(),
-        sessionId: "debug-session",
-        hypothesisId: "D",
-      }),
-    }).catch(() => {});
-    // #endregion
     try {
-      const url = `https://newsapi.org/v2/top-headlines?sources=associated-press,bbc-news,bloomberg,cnn,fox-news,the-wall-street-journal,the-washington-post&pageSize=100&apiKey=${apiKey}`;
-
-      // #region agent log
-      fetch(
-        "http://127.0.0.1:7242/ingest/2f452cb7-fe9e-4766-b4a3-1cbf4750e844",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            location: "App.jsx:18",
-            message: "Initiating fetch",
-            data: { url },
-            timestamp: Date.now(),
-            sessionId: "debug-session",
-            hypothesisId: "A",
-          }),
-        }
-      ).catch(() => {});
-      // #endregion
-      const response = await fetch(url);
-      // #region agent log
-      fetch(
-        "http://127.0.0.1:7242/ingest/2f452cb7-fe9e-4766-b4a3-1cbf4750e844",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            location: "App.jsx:21",
-            message: "Fetch response received",
-            data: { status: response.status, ok: response.ok },
-            timestamp: Date.now(),
-            sessionId: "debug-session",
-            hypothesisId: "B",
-          }),
-        }
-      ).catch(() => {});
-      // #endregion
+      const response = await fetch("/api/news");
       const data = await response.json();
-      // #region agent log
-      fetch(
-        "http://127.0.0.1:7242/ingest/2f452cb7-fe9e-4766-b4a3-1cbf4750e844",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            location: "App.jsx:24",
-            message: "Data parsed",
-            data: {
-              status: data.status,
-              totalResults: data.totalResults,
-              articleCount: data.articles?.length,
-            },
-            timestamp: Date.now(),
-            sessionId: "debug-session",
-            hypothesisId: "B,E",
-          }),
-        }
-      ).catch(() => {});
-      // #endregion
 
       if (data.status === "ok") {
         const grouped = data.articles.reduce((acc, article) => {
@@ -92,62 +19,11 @@ const App = () => {
           acc[name].push(article);
           return acc;
         }, {});
-        // #region agent log
-        fetch(
-          "http://127.0.0.1:7242/ingest/2f452cb7-fe9e-4766-b4a3-1cbf4750e844",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              location: "App.jsx:34",
-              message: "Grouped sources",
-              data: { sourceNames: Object.keys(grouped) },
-              timestamp: Date.now(),
-              sessionId: "debug-session",
-              hypothesisId: "C",
-            }),
-          }
-        ).catch(() => {});
-        // #endregion
         setSources(grouped);
       } else {
-        // #region agent log
-        fetch(
-          "http://127.0.0.1:7242/ingest/2f452cb7-fe9e-4766-b4a3-1cbf4750e844",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              location: "App.jsx:38",
-              message: "API returned error status",
-              data: { message: data.message },
-              timestamp: Date.now(),
-              sessionId: "debug-session",
-              hypothesisId: "B",
-            }),
-          }
-        ).catch(() => {});
-        // #endregion
         setError(data.message);
       }
     } catch (err) {
-      // #region agent log
-      fetch(
-        "http://127.0.0.1:7242/ingest/2f452cb7-fe9e-4766-b4a3-1cbf4750e844",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            location: "App.jsx:43",
-            message: "Fetch catch block",
-            data: { error: err.message },
-            timestamp: Date.now(),
-            sessionId: "debug-session",
-            hypothesisId: "A,B",
-          }),
-        }
-      ).catch(() => {});
-      // #endregion
       setError("Failed to fetch news. Please try again later.");
       console.error(err);
     }
