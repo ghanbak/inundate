@@ -4,8 +4,7 @@
   "private": true,
   "dependencies": {
     "react": "^19.2.3",
-    "react-dom": "^19.2.3",
-    "react-ticker": "^1.2.2"
+    "react-dom": "^19.2.3"
   },
   "scripts": {
     "dev": "vite",
@@ -35,11 +34,5 @@
     "jsdom": "^27.3.0",
     "vite": "^7.3.0",
     "vitest": "^4.0.16"
-  },
-  "overrides": {
-    "react-ticker": {
-      "react": "$react",
-      "react-dom": "$react-dom"
-    }
   }
 }
