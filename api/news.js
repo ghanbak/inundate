@@ -1,4 +1,4 @@
-export default async function handler(res) {
+export default async function handler(req, res) {
   const apiKey = process.env.NEWS_API_KEY;
 
   if (!apiKey) {

@@ -122,12 +122,16 @@ const AdRow = memo(function AdRow() {
   useEffect(() => {
     if (pushed.current) return;
     pushed.current = true;
-    try {
-      window.adsbygoogle = window.adsbygoogle || [];
-      window.adsbygoogle.push({});
-    } catch (e) {
-      console.error("AdSense error:", e);
-    }
+    // Defer push until after browser paint so the <ins> element has layout (width > 0)
+    const raf = requestAnimationFrame(() => {
+      try {
+        window.adsbygoogle = window.adsbygoogle || [];
+        window.adsbygoogle.push({});
+      } catch (e) {
+        console.error("AdSense error:", e);
+      }
+    });
+    return () => cancelAnimationFrame(raf);
   }, []);
 
   return (
