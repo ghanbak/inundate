@@ -122,16 +122,16 @@ const AdRow = memo(function AdRow() {
   useEffect(() => {
     if (pushed.current) return;
     pushed.current = true;
-    // Defer push until after browser paint so the <ins> element has layout (width > 0)
-    const raf = requestAnimationFrame(() => {
+    // Delay push to ensure both layout and AdSense script are ready
+    const timer = setTimeout(() => {
       try {
         window.adsbygoogle = window.adsbygoogle || [];
         window.adsbygoogle.push({});
       } catch (e) {
         console.error("AdSense error:", e);
       }
-    });
-    return () => cancelAnimationFrame(raf);
+    }, 500);
+    return () => clearTimeout(timer);
   }, []);
 
   return (
@@ -145,7 +145,7 @@ const AdRow = memo(function AdRow() {
       <div className="hud-ticker hud-ad-ticker">
         <ins
           className="adsbygoogle"
-          style={{ display: "block" }}
+          style={{ display: "block", width: "100%", height: "80px" }}
           data-ad-client="ca-pub-7114488121930728"
           data-ad-slot="1029974852"
           data-ad-format="auto"
