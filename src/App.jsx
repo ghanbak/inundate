@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import SOURCES from "./sources";
 
 import "./App.css";
@@ -110,10 +110,47 @@ const App = () => {
             </div>
           );
         })}
+        <AdRow />
       </div>
     </div>
   );
 };
+
+const AdRow = memo(function AdRow() {
+  const pushed = useRef(false);
+
+  useEffect(() => {
+    if (pushed.current) return;
+    pushed.current = true;
+    try {
+      window.adsbygoogle = window.adsbygoogle || [];
+      window.adsbygoogle.push({});
+    } catch (e) {
+      console.error("AdSense error:", e);
+    }
+  }, []);
+
+  return (
+    <div className="hud-row hud-ad-row" style={{ "--accent-color": "#f5c518" }}>
+      <div className="hud-sidebar">
+        <div className="hud-favicon-fallback" style={{ background: "#f5c518" }}>
+          AD
+        </div>
+        <span className="hud-source-label">Sponsored</span>
+      </div>
+      <div className="hud-ticker hud-ad-ticker">
+        <ins
+          className="adsbygoogle"
+          style={{ display: "block" }}
+          data-ad-client="ca-pub-7114488121930728"
+          data-ad-slot="1029974852"
+          data-ad-format="auto"
+          data-full-width-responsive="true"
+        />
+      </div>
+    </div>
+  );
+});
 
 function TickerScroll({ articles }) {
   const scrollRef = useRef(null);

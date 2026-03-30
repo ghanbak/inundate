@@ -1,4 +1,4 @@
-export default async function handler(req, res) {
+export default async function handler(res) {
   const apiKey = process.env.NEWS_API_KEY;
 
   if (!apiKey) {
@@ -10,7 +10,7 @@ export default async function handler(req, res) {
     const response = await fetch(url);
     const data = await response.json();
     res.status(response.status).json(data);
-  } catch (err) {
+  } catch (_err) {
     res.status(500).json({ error: "Failed to fetch news" });
   }
 }
