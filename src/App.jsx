@@ -42,7 +42,7 @@ const App = () => {
     fetchData(controller.signal);
     const interval = setInterval(
       () => fetchData(controller.signal),
-      5 * 60 * 1000,
+      10 * 60 * 1000,
     );
     return () => {
       controller.abort();
