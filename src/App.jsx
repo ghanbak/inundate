@@ -110,8 +110,8 @@ const App = () => {
             </div>
           );
         })}
-        <AdRow />
       </div>
+      <AdRow />
     </div>
   );
 };
@@ -148,8 +148,7 @@ const AdRow = memo(function AdRow() {
           style={{ display: "block", width: "100%", height: "80px" }}
           data-ad-client="ca-pub-7114488121930728"
           data-ad-slot="1029974852"
-          data-ad-format="auto"
-          data-full-width-responsive="true"
+          data-ad-format="horizontal"
         />
       </div>
     </div>
@@ -159,12 +158,14 @@ const AdRow = memo(function AdRow() {
 function TickerScroll({ articles }) {
   const scrollRef = useRef(null);
   const [paused, setPaused] = useState(false);
+  const duration = useRef(40 + Math.random() * 40);
 
   return (
     <div className="ticker-scroll">
       <div
         ref={scrollRef}
         className={`ticker-scroll-inner ${paused ? "paused" : ""}`}
+        style={{ animationDuration: `${duration.current}s` }}
       >
         {articles.map((article) => (
           <span key={article.url} className="ticker-scroll-item">

@@ -36,6 +36,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  margin-bottom: 96px;
 }
 
 .hud-row {
@@ -155,10 +156,14 @@
   font-style: italic;
 }
 
-/* Ad row */
+/* Ad row — positioned outside flex flow so AdSense can't override parent heights */
 .hud-ad-row {
-  flex: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
   height: 96px;
+  z-index: 10;
 }
 
 .hud-ad-ticker {
