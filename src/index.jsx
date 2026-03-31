@@ -1,4 +1,5 @@
 import { createRoot } from "react-dom/client";
+import { Agentation } from "agentation";
 
 import App from "./App";
 import * as serviceWorker from "./serviceWorker";
@@ -11,7 +12,12 @@ if (!container) {
   console.error("Root element not found!");
 } else {
   const root = createRoot(container);
-  root.render(<App />);
+  root.render(
+    <>
+      <App />
+      {process.env.NODE_ENV === "development" && <Agentation />}
+    </>,
+  );
 }
 
 // If you want your app to work offline and load faster, you can change
