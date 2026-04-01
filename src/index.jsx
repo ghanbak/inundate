@@ -17,7 +17,7 @@ if (!container) {
       <App />
       {process.env.NODE_ENV === "development" && (
         <Agentation
-          endpoint="http://localhost:3000"
+          endpoint="http://localhost:4747"
           onSessionCreated={(sessionId) => {
             console.log("Session started:", sessionId);
           }}
