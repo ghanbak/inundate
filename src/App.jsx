@@ -232,10 +232,10 @@ function WorldClocks() {
   return (
     <div className="hud-bar-clocks">
       {CLOCKS.map((c) => (
-        <span key={c.timeZone} className="hud-bar-clock">
-          <span className="hud-clock-label">{c.label}</span>
-          <span className="hud-clock-time">{formatTime(now, c.timeZone)}</span>
-        </span>
+        <div key={c.timeZone} className="hud-bar-clock">
+          <div className="hud-clock-label">{c.label}</div>
+          <div className="hud-clock-time">{formatTime(now, c.timeZone)}</div>
+        </div>
       ))}
     </div>
   );
