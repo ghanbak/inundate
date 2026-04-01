@@ -85,7 +85,7 @@ const App = () => {
               className="flex-1 flex border-b border-hud-border last:border-b-0 border-l-3 border-l-(--accent-color) overflow-hidden hud-row"
               style={{ "--accent-color": source.color }}
             >
-              <div className="w-16 min-w-16 flex flex-col items-center justify-center gap-1 bg-black/30 border-r border-hud-border">
+              <div className="w-24 flex flex-col items-center justify-center gap-1 bg-black/30 border-r border-hud-border">
                 {failedFavicons[source.id] ? (
                   <div
                     className="w-6 h-6 rounded flex items-center justify-center text-xs font-bold text-white"
@@ -106,11 +106,11 @@ const App = () => {
                     }
                   />
                 )}
-                <span className="text-xs text-hud-muted tracking-[1px] uppercase">
+                <span className="text-xs text-center text-hud-muted tracking-[1px] uppercase">
                   {source.name}
                 </span>
               </div>
-              <div className="flex-1 flex items-center overflow-hidden">
+              <div className="flex-1 flex items-center px-2 overflow-hidden">
                 {loading ? (
                   <span className="text-hud-subtle text-xs italic">
                     Loading...
@@ -158,14 +158,14 @@ const AdRow = memo(function AdRow() {
       className="flex hud-row fixed bottom-0 left-0 right-0 h-24 z-10 border-t border-hud-border border-l-3 border-l-(--accent-color)"
       style={{ "--accent-color": "#f5c518" }}
     >
-      <div className="w-16 min-w-16 flex flex-col items-center justify-center gap-1 bg-black/30 border-r border-hud-border">
+      <div className="w-24 flex flex-col items-center justify-center gap-1 bg-black/30 border-r border-hud-border">
         <div
           className="w-6 h-6 rounded flex items-center justify-center text-xs font-bold text-white"
           style={{ background: "#f5c518" }}
         >
           AD
         </div>
-        <span className="text-xs text-hud-muted tracking-[1px] uppercase">
+        <span className="text-xs text-center text-hud-muted tracking-[1px] uppercase">
           Sponsored
         </span>
       </div>
