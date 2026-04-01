@@ -1,8 +1,6 @@
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import SOURCES from "./sources";
 
-import "./App.css";
-
 const LOCAL_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 const CLOCKS = [
@@ -70,32 +68,34 @@ const App = () => {
   }, [fetchData]);
 
   return (
-    <div className="hud">
-      <div className="hud-bar">
-        <span className="hud-bar-title">Inundate</span>
+    <div className="h-screen flex flex-col bg-hud-bg">
+      <div className="h-auto sm:h-10 flex flex-col sm:flex-row items-center justify-between p-2 sm:py-0 sm:px-4 gap-4 sm:gap-0 bg-hud-bar border-b border-hud-border">
+        <span className="text-sm font-bold tracking-[4px] text-hud-text uppercase">
+          Inundate
+        </span>
         <WorldClocks />
       </div>
-      <div className="hud-rows">
+      <div className="flex-1 flex flex-col mb-24">
         {SOURCES.map((source) => {
           const sourceArticles = articles[source.id] || [];
 
           return (
             <div
               key={source.id}
-              className="hud-row"
+              className="flex-1 flex border-b border-hud-border last:border-b-0 border-l-3 border-l-(--accent-color) overflow-hidden hud-row"
               style={{ "--accent-color": source.color }}
             >
-              <div className="hud-sidebar">
+              <div className="w-16 min-w-16 flex flex-col items-center justify-center gap-1 bg-black/30 border-r border-hud-border">
                 {failedFavicons[source.id] ? (
                   <div
-                    className="hud-favicon-fallback"
+                    className="w-6 h-6 rounded flex items-center justify-center text-xs font-bold text-white"
                     style={{ background: source.color }}
                   >
                     {source.name[0]}
                   </div>
                 ) : (
                   <img
-                    className="hud-favicon"
+                    className="w-6 h-6 rounded"
                     src={source.favicon}
                     alt={source.name}
                     onError={() =>
@@ -106,15 +106,21 @@ const App = () => {
                     }
                   />
                 )}
-                <span className="hud-source-label">{source.name}</span>
+                <span className="text-xs text-hud-muted tracking-[1px] uppercase">
+                  {source.name}
+                </span>
               </div>
-              <div className="hud-ticker">
+              <div className="flex-1 flex items-center overflow-hidden">
                 {loading ? (
-                  <span className="hud-ticker-empty">Loading...</span>
+                  <span className="text-hud-subtle text-xs italic">
+                    Loading...
+                  </span>
                 ) : error && sourceArticles.length === 0 ? (
-                  <span className="hud-error">{error}</span>
+                  <span className="text-hud-error text-xs px-3 flex items-center">
+                    {error}
+                  </span>
                 ) : sourceArticles.length === 0 ? (
-                  <span className="hud-ticker-empty">
+                  <span className="text-hud-subtle text-xs italic">
                     No headlines available
                   </span>
                 ) : (
@@ -136,7 +142,6 @@ const AdRow = memo(function AdRow() {
   useEffect(() => {
     if (pushed.current) return;
     pushed.current = true;
-    // Delay push to ensure both layout and AdSense script are ready
     const timer = setTimeout(() => {
       try {
         window.adsbygoogle = window.adsbygoogle || [];
@@ -149,14 +154,22 @@ const AdRow = memo(function AdRow() {
   }, []);
 
   return (
-    <div className="hud-row hud-ad-row" style={{ "--accent-color": "#f5c518" }}>
-      <div className="hud-sidebar">
-        <div className="hud-favicon-fallback" style={{ background: "#f5c518" }}>
+    <div
+      className="flex hud-row fixed bottom-0 left-0 right-0 h-24 z-10 border-t border-hud-border border-l-3 border-l-(--accent-color)"
+      style={{ "--accent-color": "#f5c518" }}
+    >
+      <div className="w-16 min-w-16 flex flex-col items-center justify-center gap-1 bg-black/30 border-r border-hud-border">
+        <div
+          className="w-6 h-6 rounded flex items-center justify-center text-xs font-bold text-white"
+          style={{ background: "#f5c518" }}
+        >
           AD
         </div>
-        <span className="hud-source-label">Sponsored</span>
+        <span className="text-xs text-hud-muted tracking-[1px] uppercase">
+          Sponsored
+        </span>
       </div>
-      <div className="hud-ticker hud-ad-ticker">
+      <div className="flex items-center justify-center px-4 py-2">
         <ins
           className="adsbygoogle"
           style={{ display: "block", width: "100%", height: "80px" }}
@@ -175,45 +188,47 @@ function TickerScroll({ articles }) {
   const duration = useRef(40 + Math.random() * 40);
 
   return (
-    <div className="ticker-scroll">
+    <div className="overflow-hidden w-full">
       <div
         ref={scrollRef}
-        className={`ticker-scroll-inner ${paused ? "paused" : ""}`}
+        className={`inline-flex whitespace-nowrap animate-ticker-scroll ${paused ? "ticker-paused" : ""}`}
         style={{ animationDuration: `${duration.current}s` }}
       >
         {articles.map((article) => (
-          <span key={article.url} className="ticker-scroll-item">
+          <span key={article.url} className="shrink-0">
             <a
               href={article.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="hud-ticker-link"
+              className="font-semibold no-underline text-sm brightness-150 hover:underline"
+              style={{ color: "var(--accent-color)" }}
               onMouseEnter={() => setPaused(true)}
               onMouseLeave={() => setPaused(false)}
             >
               {article.title}
             </a>
-            <span className="hud-ticker-separator">|</span>
+            <span className="px-6 text-hud-separator">|</span>
           </span>
         ))}
         {articles.map((article) => (
           <span
             key={`${article.url}-duplicate`}
-            className="ticker-scroll-item"
+            className="shrink-0"
             aria-hidden="true"
           >
             <a
               href={article.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="hud-ticker-link"
+              className="font-semibold no-underline text-sm brightness-150 hover:underline"
+              style={{ color: "var(--accent-color)" }}
               tabIndex={-1}
               onMouseEnter={() => setPaused(true)}
               onMouseLeave={() => setPaused(false)}
             >
               {article.title}
             </a>
-            <span className="hud-ticker-separator">|</span>
+            <span className="px-6 text-hud-separator">|</span>
           </span>
         ))}
       </div>
@@ -230,11 +245,16 @@ function WorldClocks() {
   }, []);
 
   return (
-    <div className="hud-bar-clocks">
+    <div className="flex-1 flex justify-evenly items-center min-w-0 gap-4 sm:gap-0">
       {CLOCKS.map((c) => (
-        <div key={c.timeZone} className="hud-bar-clock">
-          <div className="hud-clock-label">{c.label}</div>
-          <div className="hud-clock-time">{formatTime(now, c.timeZone)}</div>
+        <div
+          key={c.timeZone}
+          className="flex flex-col items-center gap-0.5 sm:gap-1.5 text-2xs text-hud-muted tracking-[1px] sm:flex-row sm:text-xs lg:text-sm"
+        >
+          <span className="font-semibold text-hud-dim uppercase">
+            {c.label}
+          </span>
+          <span className="tabular-nums">{formatTime(now, c.timeZone)}</span>
         </div>
       ))}
     </div>

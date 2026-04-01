@@ -1,9 +1,5 @@
 import SOURCES from "../src/sources.js";
 
-const CACHE_TTL = 15 * 60 * 1000; // 15 minutes
-let cache = { data: null, timestamp: 0 };
-let inflight = null;
-
 async function fetchAllSources(apiKey) {
   const results = await Promise.allSettled(
     SOURCES.map(async (source) => {
@@ -37,40 +33,22 @@ async function fetchAllSources(apiKey) {
   return results.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
 }
 
-async function getArticles(apiKey) {
-  if (cache.data && Date.now() - cache.timestamp < CACHE_TTL) {
-    return cache.data;
-  }
-
-  // Stampede protection: reuse in-flight promise
-  if (inflight) return inflight;
-
-  inflight = fetchAllSources(apiKey)
-    .then((articles) => {
-      const data = { status: "ok", articles };
-      cache = { data, timestamp: Date.now() };
-      return data;
-    })
-    .catch((err) => {
-      console.error("Failed to refresh articles:", err);
-      // Serve stale cache on failure
-      if (cache.data) return cache.data;
-      return { status: "error", message: "Failed to fetch news" };
-    })
-    .finally(() => {
-      inflight = null;
-    });
-
-  return inflight;
-}
-
 export default async function handler(req, res) {
   const apiKey = process.env.CURRENTS_API_KEY;
 
   if (!apiKey) {
+    res.setHeader("Cache-Control", "s-maxage=0, must-revalidate");
     return res.status(500).json({ error: "CURRENTS_API_KEY not configured" });
   }
 
-  const data = await getArticles(apiKey);
-  res.status(data.status === "ok" ? 200 : 502).json(data);
+  const articles = await fetchAllSources(apiKey);
+  const data = { status: "ok", articles };
+
+  if (articles.length > 0) {
+    res.setHeader("Cache-Control", "s-maxage=3600, stale-while-revalidate=300");
+  } else {
+    res.setHeader("Cache-Control", "s-maxage=60");
+  }
+
+  res.status(200).json(data);
 }

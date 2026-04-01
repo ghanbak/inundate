@@ -1,14 +1,61 @@
-html, body {
-  margin: 0;
-  height: 100%;
-  overflow: hidden;
-  background: #0a0a0a;
-  color: #e0e0e0;
-  font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", "Consolas", monospace;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@import "tailwindcss";
+
+@theme {
+  --color-hud-bg: #0a0a0a;
+  --color-hud-bar: #111111;
+  --color-hud-border: #222222;
+  --color-hud-text: #e0e0e0;
+  --color-hud-muted: #888888;
+  --color-hud-dim: #666666;
+  --color-hud-subtle: #444444;
+  --color-hud-separator: #333333;
+  --color-hud-error: #ff4444;
+
+  --font-mono:
+    "JetBrains Mono", "Fira Code", "Cascadia Code", "Consolas", monospace;
+
+  --text-2xs: 0.625rem;
+
+  --animate-ticker-scroll: ticker-scroll 60s linear infinite;
 }
 
-#root {
-  height: 100%;
+@keyframes ticker-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@layer base {
+  html,
+  body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    background: var(--color-hud-bg);
+    color: var(--color-hud-text);
+    font-family: var(--font-mono);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  #root {
+    height: 100%;
+  }
+}
+
+@layer components {
+  .hud-row {
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--accent-color) 8%, #111) 0%,
+      #0a0a0a 40%
+    );
+  }
+}
+
+@utility ticker-paused {
+  animation-play-state: paused;
 }
