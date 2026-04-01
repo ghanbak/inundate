@@ -15,7 +15,14 @@ if (!container) {
   root.render(
     <>
       <App />
-      {process.env.NODE_ENV === "development" && <Agentation />}
+      {process.env.NODE_ENV === "development" && (
+        <Agentation
+          endpoint="http://localhost:3000"
+          onSessionCreated={(sessionId) => {
+            console.log("Session started:", sessionId);
+          }}
+        />
+      )}
     </>,
   );
 }

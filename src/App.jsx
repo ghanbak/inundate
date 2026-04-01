@@ -3,11 +3,30 @@ import SOURCES from "./sources";
 
 import "./App.css";
 
+const LOCAL_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+const CLOCKS = [
+  { label: LOCAL_TZ.split("/").pop().replace(/_/g, " "), timeZone: LOCAL_TZ },
+  { label: "NYC", timeZone: "America/New_York" },
+  { label: "LDN", timeZone: "Europe/London" },
+  { label: "PAR", timeZone: "Europe/Paris" },
+  { label: "TYO", timeZone: "Asia/Tokyo" },
+];
+
+function formatTime(date, timeZone) {
+  return date.toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+    timeZone,
+  });
+}
+
 const App = () => {
   const [articles, setArticles] = useState({});
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [clock, setClock] = useState(() => formatTime(new Date()));
   const [failedFavicons, setFailedFavicons] = useState({});
 
   const fetchData = useCallback(async (signal) => {
@@ -50,16 +69,11 @@ const App = () => {
     };
   }, [fetchData]);
 
-  useEffect(() => {
-    const timer = setInterval(() => setClock(formatTime(new Date())), 1000);
-    return () => clearInterval(timer);
-  }, []);
-
   return (
     <div className="hud">
       <div className="hud-bar">
         <span className="hud-bar-title">Inundate</span>
-        <span className="hud-bar-clock">{clock}</span>
+        <WorldClocks />
       </div>
       <div className="hud-rows">
         {SOURCES.map((source) => {
@@ -207,13 +221,24 @@ function TickerScroll({ articles }) {
   );
 }
 
-function formatTime(date) {
-  return date.toLocaleTimeString("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  });
+function WorldClocks() {
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="hud-bar-clocks">
+      {CLOCKS.map((c) => (
+        <span key={c.timeZone} className="hud-bar-clock">
+          <span className="hud-clock-label">{c.label}</span>
+          <span className="hud-clock-time">{formatTime(now, c.timeZone)}</span>
+        </span>
+      ))}
+    </div>
+  );
 }
 
 export default App;
