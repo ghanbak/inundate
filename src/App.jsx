@@ -1,4 +1,5 @@
 import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { CircleHelp, X } from "lucide-react";
 import SOURCES from "./sources";
 
 const LOCAL_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -26,6 +27,7 @@ const App = () => {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [failedFavicons, setFailedFavicons] = useState({});
+  const [showAbout, setShowAbout] = useState(false);
 
   const fetchData = useCallback(async (signal) => {
     try {
@@ -70,12 +72,22 @@ const App = () => {
   return (
     <div className="h-screen flex flex-col bg-hud-bg">
       <div className="h-auto sm:h-10 flex flex-col sm:flex-row items-center justify-between p-2 sm:py-0 sm:px-4 gap-4 sm:gap-0 bg-hud-bar border-b border-hud-border">
-        <span className="text-sm font-bold tracking-[4px] text-hud-text uppercase">
-          Inundate
+        <span className="flex items-center gap-2">
+          <span className="text-sm font-bold tracking-[4px] text-hud-text uppercase">
+            Inundate
+          </span>
+          <button
+            type="button"
+            onClick={() => setShowAbout(true)}
+            className="text-hud-dim hover:text-hud-text transition-colors"
+            aria-label="About Inundate"
+          >
+            <CircleHelp size={14} />
+          </button>
         </span>
         <WorldClocks />
       </div>
-      <div className="flex-1 flex flex-col mb-24">
+      <div className="flex-1 flex flex-col">
         {SOURCES.map((source) => {
           const sourceArticles = articles[source.id] || [];
 
@@ -131,56 +143,57 @@ const App = () => {
           );
         })}
       </div>
-      <AdRow />
+      {/* <AdRow /> */}
+      {showAbout && <AboutOverlay onClose={() => setShowAbout(false)} />}
     </div>
   );
 };
 
-const AdRow = memo(function AdRow() {
-  const pushed = useRef(false);
+// const AdRow = memo(function AdRow() {
+//   const pushed = useRef(false);
 
-  useEffect(() => {
-    if (pushed.current) return;
-    pushed.current = true;
-    const timer = setTimeout(() => {
-      try {
-        window.adsbygoogle = window.adsbygoogle || [];
-        window.adsbygoogle.push({});
-      } catch (e) {
-        console.error("AdSense error:", e);
-      }
-    }, 500);
-    return () => clearTimeout(timer);
-  }, []);
+//   useEffect(() => {
+//     if (pushed.current) return;
+//     pushed.current = true;
+//     const timer = setTimeout(() => {
+//       try {
+//         window.adsbygoogle = window.adsbygoogle || [];
+//         window.adsbygoogle.push({});
+//       } catch (e) {
+//         console.error("AdSense error:", e);
+//       }
+//     }, 500);
+//     return () => clearTimeout(timer);
+//   }, []);
 
-  return (
-    <div
-      className="flex hud-row fixed bottom-0 left-0 right-0 h-24 z-10 border-t border-hud-border border-l-3 border-l-(--accent-color)"
-      style={{ "--accent-color": "#f5c518" }}
-    >
-      <div className="w-24 flex flex-col items-center justify-center gap-1 bg-black/30 border-r border-hud-border">
-        <div
-          className="w-6 h-6 rounded flex items-center justify-center text-xs font-bold text-white"
-          style={{ background: "#f5c518" }}
-        >
-          AD
-        </div>
-        <span className="text-xs text-center text-hud-muted tracking-[1px] uppercase">
-          Sponsored
-        </span>
-      </div>
-      <div className="flex items-center justify-center px-4 py-2">
-        <ins
-          className="adsbygoogle"
-          style={{ display: "block", width: "100%", height: "80px" }}
-          data-ad-client="ca-pub-7114488121930728"
-          data-ad-slot="1029974852"
-          data-ad-format="horizontal"
-        />
-      </div>
-    </div>
-  );
-});
+//   return (
+//     <div
+//       className="flex hud-row fixed bottom-0 left-0 right-0 h-24 z-10 border-t border-hud-border border-l-3 border-l-(--accent-color)"
+//       style={{ "--accent-color": "#f5c518" }}
+//     >
+//       <div className="w-24 flex flex-col items-center justify-center gap-1 bg-black/30 border-r border-hud-border">
+//         <div
+//           className="w-6 h-6 rounded flex items-center justify-center text-xs font-bold text-white"
+//           style={{ background: "#f5c518" }}
+//         >
+//           AD
+//         </div>
+//         <span className="text-xs text-center text-hud-muted tracking-[1px] uppercase">
+//           Sponsored
+//         </span>
+//       </div>
+//       <div className="flex items-center justify-center px-4 py-2">
+//         <ins
+//           className="adsbygoogle"
+//           style={{ display: "block", width: "100%", height: "80px" }}
+//           data-ad-client="ca-pub-7114488121930728"
+//           data-ad-slot="1029974852"
+//           data-ad-format="horizontal"
+//         />
+//       </div>
+//     </div>
+//   );
+// });
 
 function TickerScroll({ articles }) {
   const scrollRef = useRef(null);
@@ -257,6 +270,65 @@ function WorldClocks() {
           <span className="tabular-nums">{formatTime(now, c.timeZone)}</span>
         </div>
       ))}
+    </div>
+  );
+}
+
+function AboutOverlay({ onClose }) {
+  useEffect(() => {
+    const handleEsc = (e) => e.key === "Escape" && onClose();
+    document.addEventListener("keydown", handleEsc);
+    return () => document.removeEventListener("keydown", handleEsc);
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-50 bg-hud-bg/95 flex items-center justify-center p-8 overflow-auto">
+      <button
+        type="button"
+        onClick={onClose}
+        className="absolute top-4 right-4 text-hud-dim hover:text-hud-text transition-colors"
+        aria-label="Close"
+      >
+        <X size={20} />
+      </button>
+      <div className="max-w-xl bg-hud-bar border border-hud-border rounded-lg p-8 text-hud-muted leading-relaxed space-y-6 text-sm">
+        <p className="text-hud-text text-lg">
+          <strong>Inundate</strong>{" "}
+          <span className="text-hud-dim">/ˈɪn.ʌn.deɪt/</span> — to overwhelm
+          with things to be dealt with.
+        </p>
+        <p>
+          This is a wall of news. Seven sources. Hundreds of headlines. All
+          updating constantly. None of it will change what you do today.
+        </p>
+        <p>
+          The modern news cycle is a machine that converts your attention into
+          revenue. Every headline is engineered to feel urgent. Almost none of
+          them are. The person who reads every story and the person who reads
+          none of them will make the same decisions about what to have for
+          dinner.
+        </p>
+        <p>
+          Inundate exists to make this visible. Stare at it long enough and the
+          headlines blur together. That's not a bug.
+        </p>
+        <p>
+          You don't need to keep up. The news will happen whether you watch it
+          or not.
+        </p>
+        <p className="text-hud-dim">Close this and go touch grass.</p>
+        <p className="text-hud-subtle text-xs pt-4">
+          Begrudgingly crafted by{" "}
+          <a
+            href="https://ghanbak.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-hud-dim hover:text-hud-text transition-colors underline"
+          >
+            ghanbak
+          </a>
+        </p>
+      </div>
     </div>
   );
 }
