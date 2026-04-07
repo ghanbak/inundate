@@ -1,5 +1,6 @@
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { CircleHelp, X } from "lucide-react";
+import { Analytics } from "@vercel/analytics/react";
 import SOURCES from "./sources";
 
 const LOCAL_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -145,6 +146,7 @@ const App = () => {
       </div>
       {/* <AdRow /> */}
       {showAbout && <AboutOverlay onClose={() => setShowAbout(false)} />}
+      <Analytics />
     </div>
   );
 };
