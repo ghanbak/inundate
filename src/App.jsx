@@ -71,8 +71,8 @@ const App = () => {
   }, [fetchData]);
 
   return (
-    <div className="h-screen flex flex-col bg-hud-bg">
-      <div className="h-auto sm:h-10 flex flex-col sm:flex-row items-center justify-between p-2 sm:py-0 sm:px-4 gap-4 sm:gap-0 bg-hud-bar border-b border-hud-border">
+    <div className="h-dvh flex flex-col bg-hud-bg">
+      <div className="h-auto sm:h-10 flex flex-col shrink-0 sm:flex-row items-center justify-between p-2 sm:py-0 sm:px-4 gap-4 sm:gap-0 bg-hud-bar border-b border-hud-border">
         <span className="flex items-center gap-2">
           <span className="text-sm font-bold tracking-[4px] text-hud-text uppercase">
             Inundate
@@ -88,7 +88,7 @@ const App = () => {
         </span>
         <WorldClocks />
       </div>
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col grow">
         {SOURCES.map((source) => {
           const sourceArticles = articles[source.id] || [];
 
@@ -98,7 +98,7 @@ const App = () => {
               className="flex-1 flex border-b border-hud-border last:border-b-0 border-l-3 border-l-(--accent-color) overflow-hidden hud-row"
               style={{ "--accent-color": source.color }}
             >
-              <div className="w-24 flex flex-col items-center justify-center gap-1 bg-black/30 border-r border-hud-border">
+              <div className="w-16 sm:w-24 flex flex-col items-center justify-center gap-1 bg-black/30 border-r border-hud-border">
                 {failedFavicons[source.id] ? (
                   <div
                     className="w-6 h-6 rounded flex items-center justify-center text-xs font-bold text-white"
@@ -284,16 +284,16 @@ function AboutOverlay({ onClose }) {
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 bg-hud-bg/95 flex items-center justify-center p-8 overflow-auto">
+    <div className="fixed inset-0 z-50 bg-hud-bg/95 flex items-center justify-center overflow-y-auto">
       <button
         type="button"
         onClick={onClose}
-        className="absolute top-4 right-4 text-hud-dim hover:text-hud-text transition-colors"
+        className="absolute top-4 right-4 bg-hud-border rounded-full p-2 text-hud-dim hover:bg-hud-separator hover:text-hud-text transition-colors"
         aria-label="Close"
       >
         <X size={20} />
       </button>
-      <div className="max-w-xl max-h-[100vh] overflow-y-auto sm:max-h-none sm:overflow-y-visible bg-hud-bar border border-hud-border rounded-lg p-8 text-hud-muted leading-relaxed space-y-6 text-sm">
+      <div className="w-dvw max-w-dvw sm:max-w-xl max-h-dvh overflow-y-auto sm:max-h-none sm:overflow-y-scroll bg-hud-bar border border-hud-border rounded-lg p-8 text-hud-muted leading-relaxed space-y-6 text-sm">
         <p className="text-hud-text text-lg">
           <strong>Inundate</strong>{" "}
           <span className="text-hud-dim">/ˈɪn.ʌn.deɪt/</span> — to overwhelm
