@@ -291,7 +291,7 @@ function AboutOverlay({ onClose }) {
       >
         <X size={20} />
       </button>
-      <div className="max-w-xl bg-hud-bar border border-hud-border rounded-lg p-8 text-hud-muted leading-relaxed space-y-6 text-sm">
+      <div className="max-w-xl max-h-[100vh] overflow-y-auto sm:max-h-none sm:overflow-y-visible bg-hud-bar border border-hud-border rounded-lg p-8 text-hud-muted leading-relaxed space-y-6 text-sm">
         <p className="text-hud-text text-lg">
           <strong>Inundate</strong>{" "}
           <span className="text-hud-dim">/ˈɪn.ʌn.deɪt/</span> — to overwhelm
