@@ -13,6 +13,18 @@ const CLOCKS = [
   { label: "TYO", timeZone: "Asia/Tokyo" },
 ];
 
+// Failure state: a repeated, non-linkable line that scrolls in the ticker like headlines.
+const BORKED =
+  "The internet is borked. This is your sign to go outside and touch grass.";
+const BORKED_ITEMS = Array.from({ length: 8 }, (_, i) => ({
+  key: `borked-${i}`,
+  text: BORKED,
+  href: null,
+}));
+
+const toItems = (articles) =>
+  articles.map((a) => ({ key: a.url, text: a.title, href: a.url }));
+
 function formatTime(date, timeZone) {
   return date.toLocaleTimeString("en-GB", {
     hour: "2-digit",
@@ -25,7 +37,6 @@ function formatTime(date, timeZone) {
 
 const App = () => {
   const [articles, setArticles] = useState({});
-  const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [failedFavicons, setFailedFavicons] = useState({});
   const [showAbout, setShowAbout] = useState(false);
@@ -33,23 +44,23 @@ const App = () => {
   const fetchData = useCallback(async (signal) => {
     try {
       const response = await fetch("/api/news", { signal });
-      const data = await response.json();
+      const data = await response.json().catch(() => null);
 
-      if (data.status === "ok") {
-        const grouped = data.articles.reduce((acc, article) => {
-          const id = article.source.id;
-          if (!acc[id]) acc[id] = [];
-          acc[id].push(article);
-          return acc;
-        }, {});
-        setArticles(grouped);
-        setError(null);
-      } else {
-        setError(data.message);
+      if (!response.ok || data?.status !== "ok") {
+        // Keep the last-known articles; empty rows render the failure ticker.
+        console.error("news fetch failed:", data?.error ?? response.status);
+        return;
       }
+
+      const grouped = data.articles.reduce((acc, article) => {
+        const id = article.source.id;
+        if (!acc[id]) acc[id] = [];
+        acc[id].push(article);
+        return acc;
+      }, {});
+      setArticles(grouped);
     } catch (err) {
       if (err.name !== "AbortError") {
-        setError("Failed to fetch news. Please try again later.");
         console.error(err);
       }
     } finally {
@@ -128,16 +139,14 @@ const App = () => {
                   <span className="text-hud-subtle text-xs italic">
                     Loading...
                   </span>
-                ) : error && sourceArticles.length === 0 ? (
-                  <span className="text-hud-error text-xs px-3 flex items-center">
-                    {error}
-                  </span>
-                ) : sourceArticles.length === 0 ? (
-                  <span className="text-hud-subtle text-xs italic">
-                    No headlines available
-                  </span>
                 ) : (
-                  <TickerScroll articles={sourceArticles} />
+                  <TickerScroll
+                    items={
+                      sourceArticles.length
+                        ? toItems(sourceArticles)
+                        : BORKED_ITEMS
+                    }
+                  />
                 )}
               </div>
             </div>
@@ -197,55 +206,45 @@ const App = () => {
 //   );
 // });
 
-function TickerScroll({ articles }) {
-  const scrollRef = useRef(null);
+function TickerScroll({ items }) {
   const [paused, setPaused] = useState(false);
   const duration = useRef(40 + Math.random() * 40);
+
+  // Two identical copies of the list are rendered so the -50% keyframe loops seamlessly.
+  const renderItem = (item, hidden) => (
+    <span
+      key={hidden ? `${item.key}-duplicate` : item.key}
+      className="shrink-0"
+      {...(hidden ? { "aria-hidden": "true" } : {})}
+    >
+      {item.href ? (
+        <a
+          href={item.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-semibold no-underline text-sm brightness-150 hover:underline"
+          style={{ color: "var(--accent-color)" }}
+          tabIndex={hidden ? -1 : undefined}
+          onMouseEnter={() => setPaused(true)}
+          onMouseLeave={() => setPaused(false)}
+        >
+          {item.text}
+        </a>
+      ) : (
+        <span className="text-sm italic text-hud-subtle">{item.text}</span>
+      )}
+      <span className="px-6 text-hud-separator">|</span>
+    </span>
+  );
 
   return (
     <div className="overflow-hidden w-full">
       <div
-        ref={scrollRef}
         className={`inline-flex whitespace-nowrap animate-ticker-scroll ${paused ? "ticker-paused" : ""}`}
         style={{ animationDuration: `${duration.current}s` }}
       >
-        {articles.map((article) => (
-          <span key={article.url} className="shrink-0">
-            <a
-              href={article.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-semibold no-underline text-sm brightness-150 hover:underline"
-              style={{ color: "var(--accent-color)" }}
-              onMouseEnter={() => setPaused(true)}
-              onMouseLeave={() => setPaused(false)}
-            >
-              {article.title}
-            </a>
-            <span className="px-6 text-hud-separator">|</span>
-          </span>
-        ))}
-        {articles.map((article) => (
-          <span
-            key={`${article.url}-duplicate`}
-            className="shrink-0"
-            aria-hidden="true"
-          >
-            <a
-              href={article.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-semibold no-underline text-sm brightness-150 hover:underline"
-              style={{ color: "var(--accent-color)" }}
-              tabIndex={-1}
-              onMouseEnter={() => setPaused(true)}
-              onMouseLeave={() => setPaused(false)}
-            >
-              {article.title}
-            </a>
-            <span className="px-6 text-hud-separator">|</span>
-          </span>
-        ))}
+        {items.map((item) => renderItem(item, false))}
+        {items.map((item) => renderItem(item, true))}
       </div>
     </div>
   );
