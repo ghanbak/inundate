@@ -60,6 +60,18 @@ describe("parseRss", () => {
     );
     expect(out).toHaveLength(0);
   });
+
+  test("keeps items with an unparseable pubDate and still sorts (no NaN comparator)", () => {
+    const out = parseRss(
+      `<rss version="2.0"><channel>
+        <item><title>Bad date</title><link>https://e/a</link><pubDate>not a date</pubDate></item>
+        <item><title>Good date</title><link>https://e/b</link><pubDate>Mon, 09 Jun 2026 10:00:00 GMT</pubDate></item>
+      </channel></rss>`,
+      "cnn",
+    );
+    expect(out).toHaveLength(2); // unparseable date item is retained, not dropped
+    expect(out[0].url).toBe("https://e/b"); // valid date sorts ahead of epoch-0 fallback
+  });
 });
 
 function mockRes() {
@@ -125,5 +137,54 @@ describe("handler", () => {
     expect(res.statusCode).toBe(502);
     expect(res.body.status).toBe("error");
     expect(res.body.error).toMatch(/unavailable/i);
+  });
+
+  test("treats an all-ok-but-empty CurrentsAPI response as success, not an outage (#3)", async () => {
+    // Every source responds ok with zero articles (quiet news period) — must NOT fall to RSS.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url) => {
+        if (url.includes("currentsapi.services")) {
+          return { ok: true, json: async () => ({ status: "ok", news: [] }) };
+        }
+        throw new Error("RSS fallback should not be reached");
+      }),
+    );
+
+    const res = mockRes();
+    await handler({}, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.source).toBe("currents"); // healthy API respected, not RSS
+    expect(res.body.stale).toBe(false);
+    expect(res.headers["Cache-Control"]).toContain("s-maxage=1800");
+  });
+
+  test("serves a partial CurrentsAPI refresh as degraded without falling to RSS (#2)", async () => {
+    // Only BBC responds; the other 6 error. Should still serve Currents data, marked stale.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url) => {
+        if (url.includes("currentsapi.services")) {
+          if (url.includes("domain=bbc.com")) {
+            return {
+              ok: true,
+              json: async () => ({ status: "ok", news: [{ title: "BBC", url: "https://b/1", published: "2026-06-09" }] }),
+            };
+          }
+          return { ok: false, status: 503, json: async () => ({}) };
+        }
+        throw new Error("RSS fallback should not be reached");
+      }),
+    );
+
+    const res = mockRes();
+    await handler({}, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.source).toBe("currents");
+    expect(res.body.stale).toBe(true); // incomplete → flagged + short cache
+    expect(res.body.articles.length).toBeGreaterThan(0);
+    expect(res.headers["Cache-Control"]).toContain("s-maxage=120");
   });
 });

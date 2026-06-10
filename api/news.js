@@ -2,17 +2,25 @@ import { list, put } from "@vercel/blob";
 import { XMLParser } from "fast-xml-parser";
 import SOURCES from "../src/sources.js";
 
-const FRESH_TTL = 30 * 60 * 1000; // Blob snapshot considered fresh for 30 min
-const STALE_MAX = 3 * 60 * 60 * 1000; // serve stale Blob only if < 3h old, else prefer fresh RSS
-const FRESH_CACHE = "s-maxage=1800, stale-while-revalidate=3600"; // good data: long edge cache
-const DEGRADED_CACHE = "s-maxage=120, stale-while-revalidate=120"; // stale/RSS: flush fast on recovery
+const FRESH_TTL = 30 * 60 * 1000; // complete CurrentsAPI snapshot: trust for 30 min
+const DEGRADED_TTL = 2 * 60 * 1000; // partial/RSS snapshot: re-attempt CurrentsAPI within ~2 min
+const STALE_MAX = 3 * 60 * 60 * 1000; // serve a stale snapshot during an outage only if < 3h old
+const FRESH_CACHE = "s-maxage=1800, stale-while-revalidate=3600"; // complete data: long edge cache
+const DEGRADED_CACHE = "s-maxage=120, stale-while-revalidate=120"; // partial/stale/RSS: flush fast
 const BLOB_KEY = "news/latest.json";
 
-const withTimeout = (promise, ms) =>
-  Promise.race([
-    promise,
-    new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), ms)),
-  ]);
+const withTimeout = (promise, ms) => {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error("timeout")), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+};
+
+const toTime = (d) => {
+  const t = new Date(d || 0).getTime();
+  return Number.isNaN(t) ? 0 : t;
+};
 
 // ---------------------------------------------------------------------------
 // Vercel Blob cache (best-effort: never let cache I/O break the response)
@@ -59,7 +67,7 @@ async function fetchCurrentsSource(source, apiKey) {
     const json = await res.json();
     if (json.status !== "ok") throw new Error(json.msg || "currents error");
     const seen = new Set();
-    const articles = json.news
+    const articles = (json.news ?? [])
       .filter((it) => it.url && !seen.has(it.url) && seen.add(it.url))
       .map((it) => ({
         source: { id: source.id },
@@ -82,11 +90,34 @@ async function refreshFromCurrents(apiKey) {
     SOURCES.map((s) => fetchCurrentsSource(s, apiKey)),
   );
   return {
-    source: "currents",
-    sources: Object.fromEntries(results.map((r) => [r.id, r.ok ? "ok" : "error"])),
-    articles: results.flatMap((r) => r.articles),
-    anyOk: results.some((r) => r.ok && r.articles.length),
+    results,
+    allOk: results.every((r) => r.ok), // every source responded ok (even if empty)
+    anyOk: results.some((r) => r.ok),
   };
+}
+
+// Build a complete snapshot from a refresh: fresh articles for the sources that
+// responded ok this round; for sources that failed, backfill from the previous
+// snapshot so a partial outage doesn't blank those rows.
+function mergeSnapshot(results, prevSnap) {
+  const prevById = {};
+  for (const a of prevSnap?.articles ?? []) {
+    (prevById[a.source.id] ??= []).push(a);
+  }
+  const sources = {};
+  const articles = [];
+  for (const r of results) {
+    if (r.ok) {
+      sources[r.id] = "ok";
+      articles.push(...r.articles);
+    } else if (prevById[r.id]?.length) {
+      sources[r.id] = "stale"; // backfilled from the previous snapshot
+      articles.push(...prevById[r.id]);
+    } else {
+      sources[r.id] = "error";
+    }
+  }
+  return { source: "currents", articles, sources };
 }
 
 // ---------------------------------------------------------------------------
@@ -136,7 +167,7 @@ export function parseRss(xmlText, sourceId) {
       author: it["dc:creator"] ?? it.author?.name ?? it.author ?? null,
     }))
     .filter((a) => a.url && !seen.has(a.url) && seen.add(a.url))
-    .sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
+    .sort((a, b) => toTime(b.publishedAt) - toTime(a.publishedAt))
     .slice(0, 15);
 }
 
@@ -164,23 +195,29 @@ export default async function handler(req, res) {
     console.error("CURRENTS_API_KEY not configured — will serve cache/RSS only");
   }
 
-  // 1. Fresh cache → serve immediately, no upstream calls.
+  // 1. Cache hit → serve immediately. A complete CurrentsAPI snapshot is trusted for
+  //    FRESH_TTL; partial/RSS snapshots only briefly, so we keep retrying for a full set.
   const snap = await readSnapshot();
-  if (snap && snap.age < FRESH_TTL && snap.articles?.length) {
-    res.setHeader("Cache-Control", FRESH_CACHE);
-    return res
-      .status(200)
-      .json({ status: "ok", source: snap.source, articles: snap.articles, sources: snap.sources });
+  const ttl = snap?.complete ? FRESH_TTL : DEGRADED_TTL;
+  if (snap && snap.age < ttl && snap.articles?.length) {
+    res.setHeader("Cache-Control", snap.complete ? FRESH_CACHE : DEGRADED_CACHE);
+    return res.status(200).json({
+      status: "ok",
+      source: snap.source,
+      stale: !snap.complete,
+      articles: snap.articles,
+      sources: snap.sources,
+    });
   }
 
-  // 2. Refresh from CurrentsAPI (preferred).
-  const fresh = apiKey ? await refreshFromCurrents(apiKey) : { anyOk: false };
-  if (fresh.anyOk) {
-    await writeSnapshot({ generatedAt: Date.now(), ...fresh });
-    res.setHeader("Cache-Control", FRESH_CACHE);
-    return res
-      .status(200)
-      .json({ status: "ok", source: "currents", articles: fresh.articles, sources: fresh.sources });
+  // 2. Refresh from CurrentsAPI (preferred). A partial refresh is merged over the last
+  //    snapshot so failed sources keep their previous headlines instead of going blank.
+  const fresh = apiKey ? await refreshFromCurrents(apiKey) : null;
+  if (fresh?.anyOk) {
+    const merged = mergeSnapshot(fresh.results, snap);
+    await writeSnapshot({ generatedAt: Date.now(), complete: fresh.allOk, ...merged });
+    res.setHeader("Cache-Control", fresh.allOk ? FRESH_CACHE : DEGRADED_CACHE);
+    return res.status(200).json({ status: "ok", stale: !fresh.allOk, ...merged });
   }
 
   // 3a. CurrentsAPI down but we have a recent snapshot → serve last-good.
@@ -200,7 +237,7 @@ export default async function handler(req, res) {
   const rssArticles = rss.flatMap((r) => r.articles);
   if (rssArticles.length) {
     const sources = Object.fromEntries(rss.map((r) => [r.id, r.ok ? "ok" : "error"]));
-    await writeSnapshot({ generatedAt: Date.now(), source: "rss", articles: rssArticles, sources });
+    await writeSnapshot({ generatedAt: Date.now(), complete: false, source: "rss", articles: rssArticles, sources });
     res.setHeader("Cache-Control", DEGRADED_CACHE);
     return res.status(200).json({ status: "ok", source: "rss", articles: rssArticles, sources });
   }
