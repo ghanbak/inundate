@@ -23,12 +23,21 @@ once-per-day cron limit is a non-issue.
 ## Setup
 
 1. Install dependencies: `npm install`
-2. Create a `.env` file:
-   ```
-   CURRENTS_API_KEY=your_currents_key   # https://currentsapi.services
-   BLOB_READ_WRITE_TOKEN=your_blob_token # Vercel Blob (auto-injected on Vercel)
-   ```
-   The RSS fallback needs no key, so the 7 rows still populate without `CURRENTS_API_KEY`.
+2. Provide secrets (see below). The RSS fallback needs no key, so the 7 rows still populate
+   even without `CURRENTS_API_KEY`.
+
+### Environment variables
+
+| Variable | Used for | Where it comes from |
+| --- | --- | --- |
+| `CURRENTS_API_KEY` | Preferred headline source ([currentsapi.services](https://currentsapi.services)) | Add to `.env` |
+| `BLOB_READ_WRITE_TOKEN` | Read/write the cached snapshot in [Vercel Blob](https://vercel.com/docs/storage/vercel-blob) | **Auto-injected in production** when the Blob store is linked to the project. Locally, pull it with `vercel env pull .env.local` |
+
+Both `.env` and `.env.local` are gitignored (`.env*`), so neither is committed.
+
+> The cache snapshot is written with `access: "public"` (it's just public headlines, served back
+> via a plain `fetch` of the blob URL). Don't switch it to `private` — the read path would then
+> require authentication.
 
 ## Development
 
@@ -36,9 +45,11 @@ once-per-day cron limit is a non-issue.
 vercel dev
 ```
 
-Runs the Vite frontend and the `/api/news` function together at `http://localhost:3000`.
+Runs the Vite frontend **and** the `/api/news` function together at `http://localhost:3000`, with
+`CURRENTS_API_KEY` / `BLOB_READ_WRITE_TOKEN` loaded from `.env` / `.env.local`. This is the only
+way to exercise Blob caching and the source fallback locally.
 
-`npm run dev` runs the frontend only — `/api/news` is unavailable, so the rows render the
+`npm run dev` runs the frontend only — `/api/news` is unavailable, so every row renders the
 failure ticker (useful for previewing that state).
 
 ## Other Commands
